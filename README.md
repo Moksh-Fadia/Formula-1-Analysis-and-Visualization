@@ -1,36 +1,59 @@
-F1 Data Analysis and Visualization Project
+# Formula 1 Analysis, Visualization, and Prediction Project
 
-Overview:
+This project is a comprehensive Formula 1 data analysis, visualization, and prediction application built using **Python**, **Streamlit**, **Pandas**, **Matplotlib**, **Seaborn**, **FastF1**, and **Scikit-Learn**.
 
-This project explores and visualizes various aspects of Formula 1 racing using historical race data. The analysis includes driver performance, race outcomes, reliability trends, and circuit insights.
+## Overview
 
+The project is divided into three major parts:
+1. **Data Analysis** - Exploring and cleaning Formula 1 datasets for insights.
+2. **Visualization** - Creating interactive charts and plots to understand trends and performance.
+3. **Prediction Model** - Implementing a prediction model to forecast race outcomes using machine learning.
 
-Features:
+## Features
 
-Driver Performance Analysis: Points progression, closest championship battles.
-Race Failures & DNFs: Trends in car reliability.
-Circuit Insights: Most used circuits, overtaking frequency, and unlucky drivers.
-Visualization: Bar plots, heatmaps, violin plots for in-depth insights.
+- **Race Analysis:** Analyze previous year's race data to predict this year's race winner.
+- **Visualization:** Interactive graphs for analyzing driver performance, team performance, qualifying times, pit stops, and more.
+- **Prediction Model:** Predict race results using a Gradient Boosting model trained on previous race data.
+- **User Interface:** Streamlit-based UI with tabs for seamless navigation between analysis, visualization, and prediction.
 
+---
 
-Setup:
+## Installation
 
-Clone the repository:
+1. **Clone the repository**
+```bash
 git clone https://github.com/Moksh-Fadia/Formula-1-Analysis-and-Visualization.git
-
-Install dependencies:
-pip install -r requirements.txt
-
-Run the analysis scripts in a Jupyter Notebook or Python environment.
+cd Formula-1-Analysis-and-Visualization
 
 
-Data Sources:
+-> Usage:
+Run the application with Streamlit:
 
-F1 Historical Data: Processed from publicly available datasets.
-Merging & Cleaning: Combining race results, driver standings, and circuit details.
+streamlit run prediction.py
+The application will be hosted on http://localhost:8501/
 
 
-Usage:
+-> Analysis & Visualization
+The Analysis and Visualization sections focus on understanding race results, driver standings, constructor standings, lap times, and more using various plots and charts.
 
-Run different scripts to generate visualizations and statistics.
-Modify parameters to focus on specific drivers, teams, or seasons.
+Data Sources: Multiple CSV files like results.csv, driver_standings.csv, pitstops.csv, qualifying.csv, etc.
+Visualizations: Created using Matplotlib and Seaborn.
+Insights: Displayed using Streamlit with interactive charts and tables.
+
+
+-> Prediction Model
+The Prediction Model is built using GradientBoostingRegressor from sklearn.
+
+Model Training:
+
+Input Data: This year's qualifying times.
+Algorithm: Gradient Boosting Regressor.
+Prediction Target: Race outcome prediction for upcoming races.
+
+Evaluation:
+Metric: Mean Absolute Error (MAE)
+Performance: Displayed in the application UI.
+
+
+
+
