@@ -11,7 +11,7 @@ The project is divided into three major parts:
 
 ## Features
 
-- **Race Analysis:** Analyze previous year's race data to predict this year's race winner.
+- **Race Analysis:** Analyze race data across multiple seasons (2022, 2023, 2024).
 - **Visualization:** Interactive graphs for analyzing driver performance, team performance, qualifying times, pit stops, and more.
 - **Prediction Model:** Predict race results using a Gradient Boosting model trained on previous race data.
 - **User Interface:** Streamlit-based UI with tabs for seamless navigation between analysis, visualization, and prediction.
