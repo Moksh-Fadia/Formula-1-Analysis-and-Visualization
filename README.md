@@ -20,11 +20,11 @@ The project is divided into three major parts:
 
 ## Installation
 
-1. **Clone the repository**
-```bash
+**Clone the repository**
 git clone https://github.com/Moksh-Fadia/Formula-1-Analysis-and-Visualization.git
 cd Formula-1-Analysis-and-Visualization
 
+---
 
 -> Usage:
 Run the application with Streamlit:
