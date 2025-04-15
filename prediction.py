@@ -8,7 +8,13 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error
 import streamlit as st
 
-fastf1.Cache.enable_cache("f1_cache")
+cache_dir = "/tmp/f1_cache"     # temporary directory for caching (for Streamlit)
+# Ensuring cache directory exists
+if not os.path.exists(cache_dir):
+    os.makedirs(cache_dir)
+
+# Enable caching with the new directory
+fastf1.Cache.enable_cache(cache_dir)
 
 st.set_page_config(page_title="F1 Analysis & Prediction", layout="wide")
 
