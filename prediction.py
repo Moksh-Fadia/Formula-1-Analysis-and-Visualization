@@ -1,29 +1,31 @@
 import os
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import fastf1
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.metrics import mean_absolute_error
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 import streamlit as st
+from sklearn.model_selection import train_test_split
+from xgboost import XGBRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_absolute_error
 
-cache_dir = "/tmp/f1_cache"     # temporary directory for caching (for Streamlit)
-# Ensuring cache directory exists
-if not os.path.exists(cache_dir):
-    os.makedirs(cache_dir)
-
-# Enable caching with the new directory
+# Enable cache
+cache_dir = os.path.expanduser("~/fastf1_cache")
+os.makedirs(cache_dir, exist_ok=True)
 fastf1.Cache.enable_cache(cache_dir)
 
+# Streamlit page config
 st.set_page_config(page_title="F1 Analysis & Prediction", layout="wide")
 
+# Sidebar navigation
 st.sidebar.title("Navigation")
 tabs = st.sidebar.selectbox("Go to", ["Analysis & Visualization", "Race Prediction"])
 
+# ==================== ANALYSIS SECTION ====================
 if tabs == "Analysis & Visualization":
     st.title("📊 F1 Analysis & Visualization")
 
+    # Load CSVs
     races = pd.read_csv('races.csv')
     drivers = pd.read_csv('drivers.csv')
     constructors = pd.read_csv('constructors.csv')
@@ -34,23 +36,21 @@ if tabs == "Analysis & Visualization":
     status = pd.read_csv('status.csv')
     pit_stops = pd.read_csv('pit_stops.csv')
 
-    results = results.merge(races[['raceId', 'circuitId']], on='raceId', how='left')
-
+    # Preprocess
     races['date'] = pd.to_datetime(races['date'])
     races.sort_values('date', ascending=False, inplace=True)
-    races['days_since_last_race'] = races['date'].diff().dt.days
+    results = results.merge(races[['raceId', 'circuitId']], on='raceId', how='left')
 
+    # Section selection
     st.sidebar.header('Analysis Sections')
     options = [
         'Top Drivers by Wins', 'Top Constructors by Wins', '1-2 Finishes', 'Podiums', 'Pole Positions', 
         'Circuits Analysis', 'Top Nationalities', 'Unluckiest Drivers',
-        'Quali vs Race Performance', 'Pit Stop Duration of Last 20 Races', 'DNF Trends Across Circuits'
+        'Quali vs Race Performance', 'Pit Stop Duration of Last 20 Races'
     ]
     selected_option = st.sidebar.selectbox('Select Analysis', options)
 
-
     if selected_option == 'Top Drivers by Wins':
-        results['year'] = results['raceId'].map(races.set_index('raceId')['date'].dt.year)
         driver_wins = results.groupby('driverId')['positionOrder'].apply(lambda x: (x == 1).sum()).reset_index()
         driver_wins.columns = ['driverId', 'wins']
         top_drivers = driver_wins.sort_values(by='wins', ascending=False).head(10)
@@ -62,7 +62,6 @@ if tabs == "Analysis & Visualization":
         sns.barplot(y='surname', x='wins', data=top_drivers, palette='pastel', ax=ax)
         plt.title('Top 10 Drivers by Wins')
         st.pyplot(fig)
-
 
     if selected_option == 'Top Constructors by Wins':
         constructor_wins = results.groupby('constructorId')['positionOrder'].apply(lambda x: (x == 1).sum()).reset_index()
@@ -201,63 +200,77 @@ if tabs == "Analysis & Visualization":
         st.pyplot(fig)
 
 
+# ==================== RACE PREDICTION SECTION ====================
 elif tabs == "Race Prediction":
-    st.title("🏁 F1 Race Prediction")
+    st.title("🏁 Monaco GP 2025 - Race Time Prediction")
 
-    session_2024 = fastf1.get_session(2024, "China", "R")
+    # Load FastF1 Monaco 2024 race session
+    session_2024 = fastf1.get_session(2024, 8, "R")
     session_2024.load()
-
     laps_2024 = session_2024.laps[["Driver", "LapTime", "Sector1Time", "Sector2Time", "Sector3Time"]].copy()
     laps_2024.dropna(inplace=True)
 
     for col in ["LapTime", "Sector1Time", "Sector2Time", "Sector3Time"]:
         laps_2024[f"{col} (s)"] = laps_2024[col].dt.total_seconds()
 
-    sector_times_2024 = laps_2024.groupby("Driver")[["Sector1Time (s)", "Sector2Time (s)", "Sector3Time (s)"]].mean().reset_index()
+    sector_times_2024 = laps_2024.groupby("Driver").agg({
+        "Sector1Time (s)": "mean",
+        "Sector2Time (s)": "mean",
+        "Sector3Time (s)": "mean"
+    }).reset_index()
+    sector_times_2024["TotalSectorTime (s)"] = sector_times_2024[["Sector1Time (s)", "Sector2Time (s)", "Sector3Time (s)"]].sum(axis=1)
 
-    qualifying_2025 = pd.DataFrame({
-        "Driver": ["Oscar Piastri", "George Russell", "Lando Norris", "Max Verstappen", "Lewis Hamilton",
-                   "Charles Leclerc", "Isack Hadjar", "Andrea Kimi Antonelli", "Yuki Tsunoda", "Alexander Albon",
-                   "Esteban Ocon", "Nico Hülkenberg", "Fernando Alonso", "Lance Stroll", "Carlos Sainz Jr.",
-                   "Pierre Gasly", "Oliver Bearman", "Jack Doohan", "Gabriel Bortoleto", "Liam Lawson"],
-        "QualifyingTime (s)": [90.641, 90.723, 90.793, 90.817, 90.927,
-                               91.021, 91.079, 91.103, 91.638, 91.706,
-                               91.625, 91.632, 91.688, 91.773, 91.840,
-                               91.992, 92.018, 92.092, 92.141, 92.174]
-    })
-
-    driver_mapping = {
-        "Oscar Piastri": "PIA", "George Russell": "RUS", "Lando Norris": "NOR", "Max Verstappen": "VER",
-        "Lewis Hamilton": "HAM", "Charles Leclerc": "LEC", "Isack Hadjar": "HAD", "Andrea Kimi Antonelli": "ANT",
-        "Yuki Tsunoda": "TSU", "Alexander Albon": "ALB", "Esteban Ocon": "OCO", "Nico Hülkenberg": "HUL",
-        "Fernando Alonso": "ALO", "Lance Stroll": "STR", "Carlos Sainz Jr.": "SAI", "Pierre Gasly": "GAS",
-        "Oliver Bearman": "BEA", "Jack Doohan": "DOO", "Gabriel Bortoleto": "BOR", "Liam Lawson": "LAW"
+    clean_air_race_pace = {
+        "VER": 93.191067, "HAM": 94.020622, "LEC": 93.418667, "NOR": 93.428600, "ALO": 94.784333,
+        "PIA": 93.232111, "RUS": 93.833378, "SAI": 94.497444, "STR": 95.318250, "HUL": 95.345455,
+        "OCO": 95.682128
     }
 
-    qualifying_2025["DriverCode"] = qualifying_2025["Driver"].map(driver_mapping)
+    team_points = {
+        "McLaren": 279, "Mercedes": 147, "Red Bull": 131, "Williams": 51, "Ferrari": 114,
+        "Haas": 20, "Aston Martin": 14, "Kick Sauber": 6, "Racing Bulls": 10, "Alpine": 7
+    }
+    max_points = max(team_points.values())
+    team_perf = {team: pts / max_points for team, pts in team_points.items()}
 
-    merged_data = qualifying_2025.merge(sector_times_2024, left_on="DriverCode", right_on="Driver", how="left")
+    driver_to_team = {
+        "VER": "Red Bull", "NOR": "McLaren", "PIA": "McLaren", "LEC": "Ferrari", "RUS": "Mercedes",
+        "HAM": "Mercedes", "GAS": "Alpine", "ALO": "Aston Martin", "TSU": "Racing Bulls",
+        "SAI": "Ferrari", "HUL": "Kick Sauber", "OCO": "Alpine", "STR": "Aston Martin"
+    }
 
-    X = merged_data[["QualifyingTime (s)", "Sector1Time (s)", "Sector2Time (s)", "Sector3Time (s)"]].fillna(0)
-    y = laps_2024.groupby("Driver")["LapTime (s)"].mean().reset_index()["LapTime (s)"]
+    qualifying_2025 = pd.DataFrame({
+        "Driver": ["VER", "NOR", "PIA", "RUS", "SAI", "ALB", "LEC", "OCO",
+                   "HAM", "STR", "GAS", "ALO", "HUL"],
+        "QualifyingTime (s)": [70.669, 69.954, 70.129, None, 71.362, 71.213, 70.063,
+                                70.942, 70.382, 72.563, 71.994, 70.924, 71.596]
+    })
+    qualifying_2025["CleanAirRacePace (s)"] = qualifying_2025["Driver"].map(clean_air_race_pace)
+    qualifying_2025["Team"] = qualifying_2025["Driver"].map(driver_to_team)
+    qualifying_2025["TeamPerformanceScore"] = qualifying_2025["Team"].map(team_perf)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=38)
-    model = GradientBoostingRegressor(n_estimators=200, learning_rate=0.1, random_state=38)
+    merged_data = qualifying_2025.merge(sector_times_2024[["Driver", "TotalSectorTime (s)"]], on="Driver", how="left")
+    valid_drivers = merged_data["Driver"].isin(laps_2024["Driver"].unique())
+    merged_data = merged_data[valid_drivers]
+
+    X = merged_data[["QualifyingTime (s)","TeamPerformanceScore", "CleanAirRacePace (s)"]]
+    y = laps_2024.groupby("Driver")["LapTime (s)"].mean().reindex(merged_data["Driver"])
+
+    imputer = SimpleImputer(strategy="median")
+    X_imputed = imputer.fit_transform(X)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_imputed, y, test_size=0.3, random_state=37)
+    model = XGBRegressor(n_estimators=500, learning_rate=0.7, max_depth=3, random_state=39, monotone_constraints='(-1,-1,-1)')
     model.fit(X_train, y_train)
 
-    predicted_race_times = model.predict(X)
-    qualifying_2025["PredictedRaceTime (s)"] = predicted_race_times
+    merged_data["PredictedRaceTime (s)"] = model.predict(X_imputed)
+    final_results = merged_data.sort_values("PredictedRaceTime (s)")
 
-    qualifying_2025 = qualifying_2025.sort_values(by="PredictedRaceTime (s)")
-
-    st.subheader("Predicted Race Results (2025 Chinese GP)")
-    st.write(qualifying_2025[["Driver", "PredictedRaceTime (s)"]])
+    st.subheader("Predicted Monaco GP 2025 Results")
+    st.dataframe(final_results[["Driver", "PredictedRaceTime (s)"]])
 
     y_pred = model.predict(X_test)
-    mae = mean_absolute_error(y_test, y_pred)
-    st.write(f"\n🔍 Model Error (MAE): {mae:.2f} seconds")
-
-
+    st.write(f"Model Error (MAE): {mean_absolute_error(y_test, y_pred):.2f} seconds")
 
 
 

@@ -1,0 +1,5 @@
+# Ignore FastF1 cache
+f1_cache/
+*.sqlite
+
+
