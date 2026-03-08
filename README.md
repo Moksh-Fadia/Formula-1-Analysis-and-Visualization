@@ -1,6 +1,6 @@
 # Formula 1 Analysis, Visualization, and Prediction Project
 
-This project is a comprehensive Formula 1 data analysis, visualization, and prediction application built using **Python**, **Streamlit**, **Pandas**, **Matplotlib**, **Seaborn**, **FastF1**, and **Scikit-Learn**.
+This project is an end-to-end Formula 1 analytics platform that explores race data through detailed analysis, interactive visualizations, and predictive modeling to uncover performance insights and forecast race outcomes.
 
 ## Overview
 
