@@ -1,6 +1,6 @@
-# Formula 1 Analysis, Visualization, and Prediction Project
+# Formula 1 Analysis, Visualization, and Prediction 
 
-This project is a comprehensive Formula 1 data analysis, visualization, and prediction application built using **Python**, **Streamlit**, **Pandas**, **Matplotlib**, **Seaborn**, **FastF1**, and **Scikit-Learn**.
+This project is an end-to-end Formula 1 analytics platform that explores race data through detailed analysis, interactive visualizations, and predictive modeling to uncover performance insights and forecast race outcomes.
 
 ## Overview
 
@@ -14,7 +14,12 @@ The project is divided into three major parts:
 - **Race Analysis:** Analyze race data across multiple seasons (2022, 2023, 2024).
 - **Visualization:** Interactive graphs for analyzing driver performance, team performance, qualifying times, pit stops, and more.
 - **Prediction Model:** Predict race result using XGBoost model trained on previous race data.
-- **User Interface:** Streamlit-based UI with tabs for seamless navigation between analysis, visualization, and prediction.
+- **User Interface:** Streamlit-based UI with tabs for navigation between analysis, visualization, and prediction.
+
+---
+
+## Screenshots
+
 
 ---
 
@@ -32,18 +37,9 @@ Run the application with Streamlit:
 streamlit run prediction.py
 The application will be hosted on http://localhost:8501/
 
--> Analysis & Visualization
-The Analysis and Visualization sections focus on understanding race results, driver standings, constructor standings, lap times, and more using various plots and charts.
-
 Data Sources: Multiple CSV files like results.csv, driver_standings.csv, pitstops.csv, qualifying.csv, etc.
 Visualizations: Created using Matplotlib and Seaborn.
-Insights: Displayed using Streamlit with interactive charts and tables.
-
--> Model Training:
-
-Input Data: This year's qualifying times.
-Algorithm: XGBRegressor.
-Prediction Target: Race outcome prediction for upcoming race.
+Insights: Displayed using Streamlit.
 
 Evaluation:
 Metric: Mean Absolute Error (MAE)
