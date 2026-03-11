@@ -18,7 +18,13 @@ The project is divided into three major parts:
 
 ---
 
-## Screenshots
+## Streamlit Dashboard
+
+![Dashboard1](streamlit_ss/f1_ss1.png)
+![Dashboard2](streamlit_ss/f1_ss2.png)
+![Dashboard3](streamlit_ss/f1_ss3.png)
+![Dashboard4](streamlit_ss/f1_ss4.png)
+![Dashboard5](streamlit_ss/f1_ss5.png)
 
 
 ---
