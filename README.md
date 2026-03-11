@@ -18,6 +18,11 @@ The project is divided into three major parts:
 
 ---
 
+## Screenshots
+
+
+---
+
 ## Installation
 
 **Clone the repository**
