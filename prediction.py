@@ -95,7 +95,7 @@ if tabs == "Analysis & Visualization":
         st.write(top_drivers)
 
         fig, ax = plt.subplots()
-        sns.barplot(y='surname', x='wins', data=top_drivers, ax=ax)
+        sns.barplot(y='surname', x='wins', data=top_drivers, palette='pastel', ax=ax)
         st.pyplot(fig)
 
     # Top Constructors
@@ -110,7 +110,7 @@ if tabs == "Analysis & Visualization":
         st.write(top_teams)
 
         fig, ax = plt.subplots()
-        sns.barplot(y='name', x='wins', data=top_teams, ax=ax)
+        sns.barplot(y='name', x='wins', data=top_teams, palette='viridis', ax=ax)
         st.pyplot(fig)
 
     # 1-2 Finishes
@@ -131,7 +131,7 @@ if tabs == "Analysis & Visualization":
         st.write(one_two_summary)
 
         fig, ax = plt.subplots()
-        sns.barplot(y='name', x='count', data=one_two_summary, ax=ax)
+        sns.barplot(y='name', x='count', data=one_two_summary, palette='magma', ax=ax)
         st.pyplot(fig)
 
     # Podiums
@@ -149,7 +149,7 @@ if tabs == "Analysis & Visualization":
         st.write(podium_counts)
 
         fig, ax = plt.subplots()
-        sns.barplot(y='surname', x='podiums', data=podium_counts, ax=ax)
+        sns.barplot(y='surname', x='podiums', data=podium_counts, palette='coolwarm', ax=ax)
         st.pyplot(fig)
 
     # Pole Positions
@@ -191,7 +191,7 @@ if tabs == "Analysis & Visualization":
         st.write(unlucky[['surname', 'dnfs', 'races', 'dnf_ratio']])
 
         fig, ax = plt.subplots()
-        sns.barplot(y='surname', x='dnf_ratio', data=unlucky, ax=ax)
+        sns.barplot(y='surname', x='dnf_ratio', data=unlucky, palette='rocket', ax=ax)
         st.pyplot(fig)
 
     # Quali vs Race
@@ -218,7 +218,7 @@ if tabs == "Analysis & Visualization":
         st.write(performance)
 
         fig, ax = plt.subplots()
-        sns.barplot(y='surname', x='gain', data=performance, ax=ax)
+        sns.barplot(y='surname', x='gain', data=performance, palette='cubehelix', ax=ax)
         st.pyplot(fig)
 
     # Pit Stops
@@ -238,7 +238,7 @@ if tabs == "Analysis & Visualization":
         st.write(pit_avg)
 
         fig, ax = plt.subplots()
-        sns.barplot(y='surname', x='milliseconds', data=pit_avg, ax=ax)
+        sns.barplot(y='surname', x='milliseconds', data=pit_avg, palette='flare', ax=ax)
         st.pyplot(fig)
 
 
