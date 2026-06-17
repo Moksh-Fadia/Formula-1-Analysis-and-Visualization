@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import streamlit as st
 from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor
-from sklearn.impute import SimpleImputer
+from sklearn.impute import SimpleImputer     # Imputer replaces missing values
 from sklearn.metrics import mean_absolute_error
 
-# Enable cache
+# Enable cache for FastF1 to avoid repeated downloads of F1 data every time the app runs
 cache_dir = os.path.expanduser("~/fastf1_cache")
 os.makedirs(cache_dir, exist_ok=True)
 fastf1.Cache.enable_cache(cache_dir)
@@ -21,28 +21,26 @@ st.set_page_config(page_title="F1 Analysis & Prediction", layout="wide")
 st.sidebar.title("Navigation")
 tabs = st.sidebar.selectbox("Go to", ["Analysis & Visualization", "Race Prediction"])
 
-# Functions for prediction section
-@st.cache_data
+@st.cache_data   # Streamlit caching to avoid reloading data on every interaction for the laps data
 def load_laps():
     session = fastf1.get_session(2024, 8, "R")
     session.load()
 
-    laps = session.laps[["Driver", "LapTime", "Sector1Time", "Sector2Time", "Sector3Time"]].copy()
+# extract columns needed for prediction
+    laps = session.laps[["Driver", "LapTime"]].copy()
     laps.dropna(inplace=True)
 
-    for col in ["LapTime", "Sector1Time", "Sector2Time", "Sector3Time"]:
-        laps[f"{col} (s)"] = laps[col].dt.total_seconds()
+    laps["LapTime (s)"] = laps["LapTime"].dt.total_seconds()   # convert timedelta to seconds (FastF1 stores times as: 0 days 00:01:32.421000 which ML models cannot use)
 
     return laps
 
-@st.cache_resource
+@st.cache_resource   # Cache the model training to avoid training again and again on every interaction
 def train_model(X_train, y_train):
     model = XGBRegressor(
-        n_estimators=200,
-        learning_rate=0.1,
-        max_depth=3,
-        random_state=39,
-        monotone_constraints='(-1,-1,-1)'
+        n_estimators=200,   # number of trees in the ensemble
+        learning_rate=0.1,  
+        max_depth=3,    
+        random_state=39
     )
     model.fit(X_train, y_train)
     return model
@@ -197,7 +195,7 @@ if tabs == "Analysis & Visualization":
     # Quali vs Race
     elif selected_option == 'Quali vs Race Performance':
         quali = qualifying[['raceId', 'driverId', 'position']].copy()
-        quali.rename(columns={'position': 'quali_position'}, inplace=True)
+        quali.rename(columns={'position': 'quali_position'}, inplace=True)   # change col name for better understanding
 
         # Convert to numeric 
         quali['quali_position'] = pd.to_numeric(quali['quali_position'], errors='coerce')
@@ -205,7 +203,7 @@ if tabs == "Analysis & Visualization":
         merged = results.merge(quali, on=['raceId', 'driverId'], how='inner')
 
         merged = merged.dropna(subset=['quali_position', 'positionOrder'])
-        merged['gain'] = merged['quali_position'] - merged['positionOrder']
+        merged['gain'] = merged['quali_position'] - merged['positionOrder']  # it calculates how many positions a driver gained (positive gain means they finished better than their qualifying position, negative means they lost positions)
 
         performance = merged.groupby('driverId')['gain'].mean().reset_index()
 
@@ -251,17 +249,6 @@ elif tabs == "Race Prediction":
         # loading data
         laps_2024 = load_laps()
 
-        # sector times
-        sector_times_2024 = laps_2024.groupby("Driver").agg({
-            "Sector1Time (s)": "mean",
-            "Sector2Time (s)": "mean",
-            "Sector3Time (s)": "mean"
-        }).reset_index()
-
-        sector_times_2024["TotalSectorTime (s)"] = sector_times_2024[
-            ["Sector1Time (s)", "Sector2Time (s)", "Sector3Time (s)"]
-        ].sum(axis=1)
-
         clean_air_race_pace = {
             "VER": 93.191067, "HAM": 94.020622, "LEC": 93.418667, "NOR": 93.428600, "ALO": 94.784333,
             "PIA": 93.232111, "RUS": 93.833378, "SAI": 94.497444, "STR": 95.318250, "HUL": 95.345455,
@@ -274,7 +261,7 @@ elif tabs == "Race Prediction":
         }
 
         max_points = max(team_points.values())
-        team_perf = {team: pts / max_points for team, pts in team_points.items()}
+        team_perf = {team: pts / max_points for team, pts in team_points.items()}   # normalize points to get a performance score between 0 and 1 (1 means best performing team, 0 means worst performing team)
 
         driver_to_team = {
             "VER": "Red Bull", "NOR": "McLaren", "PIA": "McLaren", "LEC": "Ferrari", "RUS": "Mercedes",
@@ -289,16 +276,14 @@ elif tabs == "Race Prediction":
                                   70.942, 70.382, 72.563, 71.994, 70.924, 71.596]
         })
 
+        # prediction input
         qualifying_2025["CleanAirRacePace (s)"] = qualifying_2025["Driver"].map(clean_air_race_pace)
         qualifying_2025["Team"] = qualifying_2025["Driver"].map(driver_to_team)
         qualifying_2025["TeamPerformanceScore"] = qualifying_2025["Team"].map(team_perf)
 
-        merged_data = qualifying_2025.merge(
-            sector_times_2024[["Driver", "TotalSectorTime (s)"]],
-            on="Driver", how="left"
-        )
+        merged_data = qualifying_2025.copy() 
 
-        # Keep only drivers present in laps
+        # Keep only drivers present in laps data to ensure we have target values for training
         valid_drivers = merged_data["Driver"].isin(laps_2024["Driver"].unique())
         merged_data = merged_data[valid_drivers]
 
@@ -308,12 +293,12 @@ elif tabs == "Race Prediction":
             "CleanAirRacePace (s)"
         ]]
 
-        y = laps_2024.groupby("Driver")["LapTime (s)"].mean().reindex(merged_data["Driver"])
+        y = laps_2024.groupby("Driver")["LapTime (s)"].mean().reindex(merged_data["Driver"])    # This is what model learns to predict
         y = y.fillna(y.median())  
 
         # preprocessing
         imputer = SimpleImputer(strategy="median")
-        X_imputed = imputer.fit_transform(X)
+        X_imputed = imputer.fit_transform(X)    # replace any missing values in the features with the median value of that feature
 
         # train-test split
         X_train, X_test, y_train, y_test = train_test_split(
@@ -324,7 +309,7 @@ elif tabs == "Race Prediction":
 
         merged_data["PredictedRaceTime (s)"] = model.predict(X_imputed)
 
-        final_results = merged_data.sort_values("PredictedRaceTime (s)")
+        final_results = merged_data.sort_values("PredictedRaceTime (s)")    # Lower lap time is better so fastest drivers appear first
 
         st.subheader("Predicted Monaco GP 2025 Results")
         st.dataframe(final_results[["Driver", "PredictedRaceTime (s)"]])
